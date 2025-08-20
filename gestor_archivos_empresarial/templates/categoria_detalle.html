@@ -1,0 +1,55 @@
+{% extends "index.html" %}
+{% block contenido %}
+
+<h2>Unidad: {{ categoria['nombre_categoria'] }}</h2>
+
+<!-- Formulario crear carpeta -->
+<form action="{{ url_for('crear_carpeta', categoria_id=categoria['id']) }}" method="post" class="mb-3">
+    <input type="hidden" name="categoria_id" value="{{ categoria['id'] }}">
+    <input type="hidden" name="carpeta_padre_id" value="{{ carpeta_padre_id }}">
+    <div class="input-group">
+        <input type="text" name="nombre_carpeta" class="form-control" placeholder="Nombre de carpeta" required>
+        <button type="submit" class="btn btn-primary">📁 Crear carpeta</button>
+    </div>
+</form>
+
+
+<!-- Formulario subir archivo -->
+<form action="{{ url_for('subir_archivo', categoria_id=categoria['id']) }}" method="post" enctype="multipart/form-data" class="mb-3">
+    <input type="hidden" name="carpeta_id" value="{{ carpeta_padre_id }}">
+    <div class="input-group">
+        <input type="file" name="archivo" class="form-control" required>
+        <input type="text" name="descripcion" class="form-control" placeholder="Descripción (opcional)">
+        <button type="submit" class="btn btn-success">📄 Subir archivo</button>
+    </div>
+</form>
+
+<!-- Lista de carpetas -->
+<h4>Carpetas</h4>
+<ul class="list-group mb-3">
+    {% for carpeta in carpetas %}
+    <li class="list-group-item">
+        📁 <a href="{{ url_for('ver_categoria', categoria_id=categoria['id']) }}?carpeta_id={{ carpeta['id'] }}">
+                {{ carpeta['nombre_carpeta'] }}
+            </a>
+        <small class="text-muted"> - creada el {{ carpeta['fecha_creacion'] }}</small>
+    </li>
+    {% else %}
+    <li class="list-group-item">No hay carpetas</li>
+    {% endfor %}
+</ul>
+
+<!-- Lista de archivos -->
+<h4>Archivos</h4>
+<ul class="list-group">
+    {% for archivo in archivos %}
+    <li class="list-group-item">
+        📄 {{ archivo['nombre_original'] }}
+        <small class="text-muted"> - subido el {{ archivo['fecha_subida'] }}</small>
+    </li>
+    {% else %}
+    <li class="list-group-item">No hay archivos</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
