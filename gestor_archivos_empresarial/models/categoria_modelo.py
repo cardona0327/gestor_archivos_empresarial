@@ -19,10 +19,12 @@ def obtener_categorias():
     return categorias
 
 
-def obtener_categoria_por_id(id_categoria):
+
+
+def obtener_categoria_por_id(categoria_id):
     conexion = conectar()
     cursor = conexion.cursor()
-    cursor.execute("SELECT id, nombre_categoria FROM categorias WHERE id = %s", (id_categoria,))
+    cursor.execute("SELECT id, nombre_categoria FROM categorias WHERE id = %s", (categoria_id,))
     categoria = cursor.fetchone()
     conexion.close()
     return categoria

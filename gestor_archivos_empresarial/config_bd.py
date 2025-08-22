@@ -1,13 +1,19 @@
 import pymysql
-import config  # Importas tu archivo de configuración
+
+MYSQL_HOST = 'localhost'
+MYSQL_USER = 'root'
+MYSQL_PASSWORD = 'root'
+MYSQL_DB = 'gestor_archivos'
+MYSQL_PORT = 3306  # Puedes dejarlo así si no cambiaste el puerto de MySQL
+
 
 def conectar():
     return pymysql.connect(
-        host=config.MYSQL_HOST,
-        user=config.MYSQL_USER,
-        password=config.MYSQL_PASSWORD,
-        database=config.MYSQL_DB,
-        port=config.MYSQL_PORT,
+        host=MYSQL_HOST,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD,
+        database=MYSQL_DB,
+        port=MYSQL_PORT,
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
