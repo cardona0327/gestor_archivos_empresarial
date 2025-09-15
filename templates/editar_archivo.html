@@ -1,0 +1,30 @@
+{% extends "index.html" %}
+
+{% block contenido %}
+<div class="container mt-4">
+  <h2>Editar archivo: {{ archivo.nombre_original }}</h2>
+
+  <form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="archivo" class="form-label">Reemplazar archivo</label>
+      <input type="file" class="form-control" name="archivo" id="archivo">
+      <small class="text-muted">Si no s
+        eleccionas nada, se mantiene el archivo actual.</small>
+    </div>
+
+    <div class="mb-3">
+      <label for="descripcion" class="form-label">Descripción</label>
+      <textarea name="descripcion" id="descripcion" class="form-control">{{ archivo.descripcion }}</textarea>
+    </div>
+
+    {% if archivo.fecha_actualizacion %}
+      <p><strong>Última actualización:</strong> {{ archivo.fecha_actualizacion }}</p>
+    {% else %}
+      <p><em>Aún no se ha actualizado desde la creación.</em></p>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    <a href="{{ url_for('ver_categoria', categoria_id=archivo.id_categoria) }}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

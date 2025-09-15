@@ -1,0 +1,14 @@
+{% extends "index.html" %}
+
+{% block contenido %}
+<div class="container mt-4">
+    <h2>Crear Nueva Unidad</h2>
+    <form method="POST" action="{{ url_for('crear_categoria_ruta') }}">
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre de la categoría:</label>
+            <input type="text" class="form-control" name="nombre" id="nombre" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Crear</button>
+    </form>
+</div>
+{% endblock %}

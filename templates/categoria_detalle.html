@@ -1,0 +1,108 @@
+{% extends "index.html" %}
+{% block contenido %}
+
+<h2>Unidad: {{ categoria['nombre_categoria'] }}</h2>
+
+{% if carpeta_actual %}
+  <p class="text-muted mb-2">
+    Dentro de: <strong>{{ carpeta_actual['nombre_carpeta'] }}</strong>
+    {% if carpeta_actual['carpeta_padre_id'] %}
+      · <a href="{{ url_for('ver_categoria', categoria_id=categoria['id'], carpeta_id=carpeta_actual['carpeta_padre_id']) }}">Subir un nivel</a>
+    {% else %}
+      · <a href="{{ url_for('ver_categoria', categoria_id=categoria['id']) }}">Volver a raíz</a>
+    {% endif %}
+  </p>
+{% else %}
+  <!-- OJO: aquí estaba el fallo: usa categoria_id, no id_categoria -->
+  <p class="text-muted mb-2">
+    <a href="{{ url_for('ver_categoria', categoria_id=categoria['id']) }}">Carpeta raíz</a>
+  </p>
+{% endif %}
+
+<!-- Botón para descargar la carpeta actual como ZIP -->
+<!-- Botón para descargar la carpeta actual como ZIP -->
+<div class="mb-3 d-flex justify-content-end">
+  {% if carpeta_actual %}
+    <a
+      href="{{ url_for('descargar_carpeta', categoria_id=categoria['id']) }}?carpeta_id={{ carpeta_actual['id'] }}"
+      class="btn btn-outline-secondary"
+      title="Descargar todos los archivos de esta carpeta"
+    >
+        📦 Descargar esta carpeta (.zip)
+    </a>
+  {% else %}
+    <a
+      href="{{ url_for('descargar_carpeta', categoria_id=categoria['id']) }}"
+      class="btn btn-outline-secondary"
+      title="Descargar todos los archivos de la carpeta raíz"
+    >
+        📦 Descargar carpeta raíz (.zip)
+    </a>
+  {% endif %}
+</div>
+
+<!-- Formulario crear carpeta -->
+<form action="{{ url_for('crear_carpeta') }}" method="post" class="mb-3">
+  <input type="hidden" name="categoria_id" value="{{ categoria['id'] }}">
+  <input type="hidden" name="carpeta_padre_id" value="{{ carpeta_padre_id }}">
+  <div class="input-group">
+    <input type="text" name="nombre_carpeta" class="form-control" placeholder="Nombre de carpeta" required>
+    <button type="submit" class="btn btn-primary">📁 Crear carpeta</button>
+  </div>
+</form>
+
+<!-- Formulario subir archivo -->
+<form action="{{ url_for('subir_archivo', categoria_id=categoria['id']) }}" method="post" enctype="multipart/form-data" class="mb-3">
+  <input type="hidden" name="carpeta_id" value="{{ carpeta_padre_id }}">
+  <div class="input-group">
+    <input type="file" name="archivo" class="form-control" required>
+    <input type="text" name="descripcion" class="form-control" placeholder="Descripción (opcional)">
+    <button type="submit" class="btn btn-success">📄 Subir archivo</button>
+  </div>
+</form>
+
+<!-- Lista de carpetas -->
+<h4>Carpetas</h4>
+<ul class="list-group mb-3">
+  {% for carpeta in carpetas %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <span>
+        📁 <a href="{{ url_for('ver_categoria', categoria_id=categoria['id']) }}?carpeta_id={{ carpeta['id'] }}">
+              {{ carpeta['nombre_carpeta'] }}
+            </a>
+      </span>
+<small class="text-muted">{{ carpeta['fecha_creacion'] }}</small>
+    </li>
+  {% else %}
+    <li class="list-group-item">No hay carpetas</li>
+  {% endfor %}
+</ul>
+
+
+<!-- Lista de archivos -->
+<h4>Archivos</h4>
+<ul class="list-group">
+  {% for archivo in archivos %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+      📄 <strong>{{ archivo['nombre_original'] }}</strong>
+      <p class="mb-1 text-muted">{{ archivo['descripcion'] or 'Sin descripción' }}</p>
+      <br>
+      <small class="text-muted">Subido el {{ archivo['fecha_subida'] }}</small>
+    </div>
+    <div class="btn-group">
+      <!-- Descargar -->
+      <a href="{{ url_for('descargar_archivo', archivo_id=archivo['id']) }}"
+         class="btn btn-sm btn-outline-primary">⬇️ Descargar</a>
+
+      <!-- Editar -->
+      <a href="{{ url_for('editar_archivo', archivo_id=archivo['id']) }}"
+         class="btn btn-sm btn-outline-warning">✏️ Editar</a>
+    </div>
+  </li>
+  {% else %}
+  <li class="list-group-item">No hay archivos</li>
+  {% endfor %}
+</ul>
+
+{% endblock %}
