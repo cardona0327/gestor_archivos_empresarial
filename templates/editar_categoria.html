@@ -1,0 +1,14 @@
+{% extends "index.html" %}
+{% block contenido %}
+<h2>Editar categoría</h2>
+<form method="POST">
+  <div class="mb-3">
+    <label for="nombre" class="form-label">Nuevo nombre</label>
+    <input type="text" id="nombre" name="nombre_categoria"
+           class="form-control"
+           value="{{ categoria['nombre_categoria'] }}" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Guardar cambios</button>
+  <a href="{{ url_for('inicio') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

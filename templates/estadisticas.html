@@ -1,0 +1,176 @@
+{% extends "index.html" %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">📊 Dashboard de Estadísticas</h2>
+
+    <!-- KPIs -->
+    <div class="row text-center mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Categorías</h5>
+                    <h2>{{ total_categorias }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Carpetas</h5>
+                    <h2>{{ total_carpetas }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Archivos</h5>
+                    <h2>{{ total_archivos }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficas por categoría -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Carpetas por Categoría</h5>
+                    <canvas id="graficoCarpetas" style="max-height:400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Archivos por Categoría</h5>
+                    <canvas id="graficoArchivos" style="max-height:400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfica combinada -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Carpetas y Archivos por Categoría</h5>
+                    <canvas id="graficoCombinado" style="max-height:400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfica de dona y línea -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Proporción Carpetas vs Archivos</h5>
+                    <canvas id="graficoDona" style="max-height:400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Evolución Mensual</h5>
+                    <canvas id="graficoLinea" style="max-height:400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Inyectamos los datos -->
+<script id="datos-carpetas" type="application/json">{{ datos_carpetas | tojson | safe }}</script>
+<script id="datos-archivos" type="application/json">{{ datos_archivos | tojson | safe }}</script>
+<script id="evol-carpetas" type="application/json">{{ evol_carpetas | tojson | safe }}</script>
+<script id="evol-archivos" type="application/json">{{ evol_archivos | tojson | safe }}</script>
+
+<script>
+    const datosCarpetas = JSON.parse(document.getElementById("datos-carpetas").textContent);
+    const datosArchivos = JSON.parse(document.getElementById("datos-archivos").textContent);
+    const evolCarpetas = JSON.parse(document.getElementById("evol-carpetas").textContent);
+    const evolArchivos = JSON.parse(document.getElementById("evol-archivos").textContent);
+
+    const nombresCategorias = datosCarpetas.map(d => d.nombre_categoria);
+    const totalesCarpetas = datosCarpetas.map(d => d.total_carpetas);
+    const totalesArchivos = datosArchivos.map(d => d.total_archivos);
+
+    // 🎨 Paletas exclusivas por gráfico
+    const coloresCarpetas = ['#FF6F61','#6B5B95','#88B04B','#F7CAC9','#92A8D1','#955251','#FFD700'];
+    const coloresArchivos = ['#00BFFF','#FF7F50','#32CD32','#FFDAB9','#8A2BE2','#FF4500','#40E0D0'];
+    const coloresCombinado = {carpetas: '#1E88E5', archivos: '#D81B60'};
+    const coloresDona = ['#8BC34A','#FF9800'];
+    const coloresLinea = {carpetas: '#3F51B5', archivos: '#009688'};
+
+    // 📊 Gráfico Carpetas
+    new Chart(document.getElementById('graficoCarpetas'), {
+        type: 'bar',
+        data: { labels: nombresCategorias,
+            datasets: [{ label: 'Carpetas', data: totalesCarpetas, backgroundColor: coloresCarpetas }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // 📊 Gráfico Archivos
+    new Chart(document.getElementById('graficoArchivos'), {
+        type: 'bar',
+        data: { labels: nombresCategorias,
+            datasets: [{ label: 'Archivos', data: totalesArchivos, backgroundColor: coloresArchivos }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // 📊 Gráfico Combinado
+    new Chart(document.getElementById('graficoCombinado'), {
+        type: 'bar',
+        data: {
+            labels: nombresCategorias,
+            datasets: [
+                { label: 'Carpetas', data: totalesCarpetas, backgroundColor: coloresCombinado.carpetas },
+                { label: 'Archivos', data: totalesArchivos, backgroundColor: coloresCombinado.archivos }
+            ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    // 🍩 Gráfico Dona
+    new Chart(document.getElementById('graficoDona'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Carpetas', 'Archivos'],
+            datasets: [{
+                data: [totalesCarpetas.reduce((a, b) => a + b, 0), totalesArchivos.reduce((a, b) => a + b, 0)],
+                backgroundColor: coloresDona
+            }]
+        }
+    });
+
+    // 📈 Gráfico Línea Evolución
+    const meses = [...new Set([...evolCarpetas.map(d => d.mes), ...evolArchivos.map(d => d.mes)])].sort();
+    const evolCarpData = meses.map(m => (evolCarpetas.find(d => d.mes === m)?.total) || 0);
+    const evolArchData = meses.map(m => (evolArchivos.find(d => d.mes === m)?.total) || 0);
+
+    new Chart(document.getElementById('graficoLinea'), {
+        type: 'line',
+        data: {
+            labels: meses,
+            datasets: [
+                { label: 'Carpetas', data: evolCarpData, borderColor: coloresLinea.carpetas, backgroundColor: 'rgba(63,81,181,0.3)', fill: true },
+                { label: 'Archivos', data: evolArchData, borderColor: coloresLinea.archivos, backgroundColor: 'rgba(0,150,136,0.3)', fill: true }
+            ]
+        },
+        options: { responsive: true, tension: 0.3 }
+    });
+</script>
+{% endblock %}

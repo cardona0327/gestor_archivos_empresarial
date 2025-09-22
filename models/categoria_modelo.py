@@ -28,3 +28,24 @@ def obtener_categoria_por_id(categoria_id):
     categoria = cursor.fetchone()
     conexion.close()
     return categoria
+
+
+
+
+def actualizar_categoria(categoria_id, nuevo_nombre):
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute(
+        "UPDATE categorias SET nombre_categoria = %s WHERE id = %s",
+        (nuevo_nombre, categoria_id)
+    )
+    conexion.commit()
+    conexion.close()
+
+
+def eliminar_categoria(categoria_id):
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute("DELETE FROM categorias WHERE id = %s", (categoria_id,))
+    conexion.commit()
+    conexion.close()

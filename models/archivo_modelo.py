@@ -92,3 +92,91 @@ def actualizar_archivo(archivo_id, nuevo_nombre=None, nueva_ruta=None, nueva_des
     cursor.execute(query, tuple(valores))
     conexion.commit()
     conexion.close()
+    
+    
+    
+# --- archivo_modelo.py (añadir esto) ---
+def buscar_archivos(nombre=None, descripcion=None, fecha_desde=None, fecha_hasta=None, categoria_id=None, carpeta_id=None):
+    """
+    Busca archivos con filtros opcionales:
+    - nombre: buscado con LIKE en nombre_original
+    - descripcion: buscado con LIKE en descripcion
+    - fecha_desde / fecha_hasta: filtra por fecha_subida (YYYY-MM-DD o YYYY-MM-DD HH:MM:SS)
+    - categoria_id: si se quiere limitar a una categoría concreta (opcional)
+    - carpeta_id: si se quiere limitar a una carpeta concreta (opcional; puede ser None para archivos en raíz)
+    Devuelve lista de diccionarios.
+    """
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    condiciones = []
+    params = []
+
+    if nombre:
+        condiciones.append("nombre_original LIKE %s")
+        params.append(f"%{nombre}%")
+
+    if descripcion:
+        condiciones.append("descripcion LIKE %s")
+        params.append(f"%{descripcion}%")
+
+    if fecha_desde:
+        condiciones.append("fecha_subida >= %s")
+        params.append(fecha_desde)
+
+    if fecha_hasta:
+        condiciones.append("fecha_subida <= %s")
+        params.append(fecha_hasta)
+
+    if categoria_id is not None:
+        condiciones.append("id_categoria = %s")
+        params.append(categoria_id)
+
+    # carpeta_id puede ser None (archivos en raíz) o un entero (archivos dentro de carpeta)
+    if carpeta_id is None:
+        # si el usuario indicó explicitamente carpeta_id=None queremos archivos en la raíz:
+        condiciones.append("carpeta_id IS NULL")
+    elif carpeta_id != "__ANY__":  # si el caller pasa "__ANY__" quiere todas las carpetas (no filtrar)
+        condiciones.append("carpeta_id = %s")
+        params.append(carpeta_id)
+
+    where_clause = ("WHERE " + " AND ".join(condiciones)) if condiciones else ""
+
+    consulta = f"""
+        SELECT id, id_categoria, carpeta_id, nombre_original, ruta_archivo, descripcion, fecha_subida
+        FROM archivos
+        {where_clause}
+        ORDER BY fecha_subida DESC
+    """
+    cursor.execute(consulta, tuple(params))
+    resultados = cursor.fetchall()
+    conexion.close()
+    return resultados
+
+
+def contar_archivos_por_categoria():
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute("""
+        SELECT a.id_categoria, cat.nombre_categoria, COUNT(*) as total_archivos
+        FROM archivos a
+        JOIN categorias cat ON a.id_categoria = cat.id
+        GROUP BY a.id_categoria, cat.nombre_categoria
+    """)
+    filas = cursor.fetchall()
+    conexion.close()
+    return filas
+
+# archivo_modelo.py
+def contar_archivos_por_mes():
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute("""
+        SELECT DATE_FORMAT(fecha_subida, '%Y-%m') as mes, COUNT(*) as total
+        FROM archivos
+        GROUP BY mes
+        ORDER BY mes
+    """)
+    filas = cursor.fetchall()
+    conexion.close()
+    return filas

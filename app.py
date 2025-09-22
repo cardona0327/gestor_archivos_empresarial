@@ -1,9 +1,21 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file
 from controllers.archivo_controlador import mostrar_inicio, mostrar_categoria
 from models.categoria_modelo import crear_categoria as crear_categoria_bd, obtener_categorias
-from models.archivo_modelo import guardar_archivo, obtener_archivo_por_id, actualizar_archivo, obtener_archivos_por_ubicacion
-from models.carpeta_modelo import crear_carpeta_bd, obtener_subcarpetas, obtener_carpeta_por_id
+from models.archivo_modelo import guardar_archivo, obtener_archivo_por_id, actualizar_archivo, obtener_archivos_por_ubicacion, buscar_archivos, contar_archivos_por_categoria
+from models.carpeta_modelo import crear_carpeta_bd, obtener_subcarpetas, obtener_carpeta_por_id, buscar_carpetas, contar_carpetas_por_categoria
 import io, zipfile, os
+
+
+
+from models.archivo_modelo import contar_archivos_por_categoria, contar_archivos_por_mes
+from models.carpeta_modelo import contar_carpetas_por_categoria, contar_carpetas_por_mes
+from models.categoria_modelo import obtener_categorias
+from models.categoria_modelo import (
+    crear_categoria as crear_categoria_bd,
+    obtener_categorias,
+    actualizar_categoria,
+    eliminar_categoria
+)
 
 app = Flask(__name__)
 # Carpeta física donde guardas los archivos (ruta absoluta)
@@ -253,6 +265,130 @@ def descargar_carpeta(categoria_id):
     mem_zip.seek(0)
     nombre_zip = f"carpeta_{carpeta_id or 'raiz'}_categoria_{categoria_id}.zip"
     return send_file(mem_zip, as_attachment=True, download_name=nombre_zip, mimetype="application/zip")
+
+
+
+
+
+
+@app.route("/buscar", methods=["GET", "POST"])
+def buscar():
+    # Si es GET mostramos el formulario vacío
+    if request.method == "GET":
+        return render_template(
+            "buscar.html",
+            resultados_archivos=[],
+            resultados_carpetas=[],
+            filtros={}
+        )
+
+    # POST -> procesamos filtros
+    nombre = request.form.get("q_nombre") or None
+    descripcion = request.form.get("q_descripcion") or None
+    fecha_desde = request.form.get("q_fecha_desde") or None
+    fecha_hasta = request.form.get("q_fecha_hasta") or None
+
+    # checkboxes para decidir si buscamos archivos/carpetas
+    buscar_en_archivos = bool(request.form.get("filtrar_archivos"))
+    buscar_en_carpetas = bool(request.form.get("filtrar_carpetas"))
+
+    # 👇 ajuste: si no se marcó ninguno, activamos ambos por defecto
+    if not buscar_en_archivos and not buscar_en_carpetas:
+        buscar_en_archivos = True
+        buscar_en_carpetas = True
+
+    categoria_id = request.form.get("q_categoria")
+    categoria_id = int(categoria_id) if categoria_id not in (None, "", "None") else None
+
+    carpeta_id_raw = request.form.get("q_carpeta")
+    # opcional: filtrar por carpeta específica
+    if carpeta_id_raw in (None, "", "None"):
+        carpeta_filter = "__ANY__"  # no limitamos por carpeta
+    elif carpeta_id_raw == "NULL":
+        carpeta_filter = None  # solo archivos en raíz
+    else:
+        carpeta_filter = int(carpeta_id_raw)
+
+    resultados_archivos = []
+    resultados_carpetas = []
+
+    if buscar_en_archivos:
+        resultados_archivos = buscar_archivos(
+            nombre=nombre,
+            descripcion=descripcion,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            categoria_id=categoria_id,
+            carpeta_id=carpeta_filter
+        )
+
+    if buscar_en_carpetas:
+        resultados_carpetas = buscar_carpetas(
+            nombre=nombre,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            categoria_id=categoria_id
+        )
+
+    filtros = {
+        "nombre": nombre,
+        "descripcion": descripcion,
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
+        "buscar_en_archivos": buscar_en_archivos,
+        "buscar_en_carpetas": buscar_en_carpetas,
+        "categoria_id": categoria_id,
+        "carpeta_filter": carpeta_filter,
+    }
+
+    return render_template(
+        "buscar.html",
+        resultados_archivos=resultados_archivos,
+        resultados_carpetas=resultados_carpetas,
+        filtros=filtros
+    )
+
+
+
+@app.route("/estadisticas")
+def estadisticas():
+    datos_carpetas = contar_carpetas_por_categoria()  # devuelve lista
+    datos_archivos  = contar_archivos_por_categoria() # devuelve lista
+    return render_template("estadisticas.html",
+    datos_carpetas=contar_carpetas_por_categoria(),
+    datos_archivos=contar_archivos_por_categoria(),
+    evol_carpetas=contar_carpetas_por_mes(),
+    evol_archivos=contar_archivos_por_mes(),
+    total_categorias=len(obtener_categorias()),
+    total_carpetas=sum([c["total_carpetas"] for c in contar_carpetas_por_categoria()]),
+    total_archivos=sum([a["total_archivos"] for a in contar_archivos_por_categoria()])
+)
+
+
+
+
+# ---- Editar categoría ----
+@app.route("/categoria/<int:categoria_id>/editar", methods=["GET", "POST"])
+def editar_categoria(categoria_id):
+    from models.categoria_modelo import obtener_categoria_por_id
+    categoria = obtener_categoria_por_id(categoria_id)
+    if not categoria:
+        return "Categoría no encontrada", 404
+
+    if request.method == "POST":
+        nuevo_nombre = request.form.get("nombre_categoria")
+        if nuevo_nombre:
+            actualizar_categoria(categoria_id, nuevo_nombre)
+        return redirect(url_for("inicio"))
+
+    return render_template("editar_categoria.html", categoria=categoria)
+
+
+# ---- Eliminar categoría ----
+@app.route("/categoria/<int:categoria_id>/eliminar", methods=["POST"])
+def eliminar_categoria_ruta(categoria_id):
+    eliminar_categoria(categoria_id)
+    return redirect(url_for("inicio"))
 
 
 

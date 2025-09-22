@@ -29,7 +29,7 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">Estadísticas</a>
+          <a class="nav-link" href="{{url_for('estadisticas')}}">Estadísticas</a>
         </li>
 
         <!-- Dropdown para unidades -->
@@ -42,10 +42,20 @@
             
             <!-- Listar categorías desde la base de datos -->
             {% for categoria in categorias %}
-              <li>
-                <a class="dropdown-item" href="{{ url_for('ver_categoria', categoria_id=categoria['id']) }}">
+              <li class="dropdown-item d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('ver_categoria', categoria_id=categoria['id']) }}">
                   {{ categoria['nombre_categoria'] }}
                 </a>
+                <div class="ms-2 btn-group btn-group-sm">
+                  <a href="{{ url_for('editar_categoria', categoria_id=categoria['id']) }}"
+                    class="btn btn-outline-warning btn-sm">✏️</a>
+
+                  <form action="{{ url_for('eliminar_categoria_ruta', categoria_id=categoria['id']) }}"
+                        method="POST" onsubmit="return confirm('¿Eliminar esta categoría y todo su contenido?');"
+                        style="display:inline;">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
+                  </form>
+                </div>
               </li>
             {% endfor %}
 
@@ -56,10 +66,9 @@
 
       </ul>
 
-      <form class="d-flex" role="search">
-        <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Search">
-        <button class="btn btn-outline-success" type="submit">Buscar</button>
-      </form>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('buscar') }}">Buscar</a>
+      </li>
 
     </div>
   </div>
